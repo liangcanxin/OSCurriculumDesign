@@ -1,0 +1,62 @@
+#include "OSCurriculumDesign.h"
+#include "Resource.h"
+
+//-----------------------全局变量-------------------------
+extern int BLOCKNUM;		//物理块数
+extern int *PVS;			//PageVisitSequence页面访问序列
+extern int PVS_NUM;		//页面访问序列长度
+extern int *replaceArray;	//页面置换标志数组（大小为访问页面的次数，存储每次访问是否进行页面置换）
+extern int *lackArray;		//缺页中断标志数组（大小为访问页面的次数，存储每次访问是否存在缺页中断）
+
+int main()
+{
+    int i=0;
+    int amount = 400;       //产生的随机数数量
+    int a[amount];
+    int minAddr=0,maxAddr=0;//随机数的最低地址和最高地址
+    DepositRandomAddr(amount,a,minAddr,maxAddr);//此时，a数组是用于存放随机数的地址流数组
+
+    /*for(int i=0;i<amount;i++)       //输出所有随机数的具体地址分布情况
+    {
+        if(i==0)printf("具体的随机数地址分布情况:\n");
+        printf("%d  ",a[i]);
+        if((i+1)%10 == 0&&i!=amount-1)printf("\n");
+    }*/
+
+    DepositPageAddr(amount,a,minAddr,maxAddr);//此时，a数组是用于存放随机数的页地址流数组
+
+    /*for(int i=0;i<amount;i++)       //输出所有随机数的具体页地址分布情况
+    {
+        if(i==0)printf("具体的随机数所在页地址分布情况:\n");
+        printf("%02d\t",a[i]);
+        if((i+1)%10 == 0&&i!=amount-1)printf("\n");
+    }*/
+    printf("页框数\tOPT命中率\tFIFO命中率\tLRU命中率\n");
+    int blockNum[40];
+    for(i=4; i <= 40;i++){
+        blockNum[i]=i;
+        InputAndInit(blockNum[i], a, amount);
+        BLOCK block(BLOCKNUM);	//定义物理块（注意该语句必须在变量和数据初始化后，否则BLOCKNUM未知）
+
+        ReplaceOPT(block);
+        printf("[%02d]\t",i);
+        //printf("页面置换次数:%03d  ",GetReplaceTimes());
+        //printf("缺页中断次数:%03d  ",GetLackTimes());
+        printf("OPT:%.4lf\t",1-((GetLackTimes()*1.0)/amount));
+
+        ReplaceFIFO(block);
+        //printf("页面置换次数:%03d  ",GetReplaceTimes());
+        //printf("缺页中断次数:%03d  ",GetLackTimes());
+        printf("FIFO:%.4lf\t",1-((GetLackTimes()*1.0)/amount));
+
+        ReplaceLRU(block);
+        //printf("页面置换次数:%03d  ",GetReplaceTimes());
+        //printf("缺页中断次数:%03d  ",GetLackTimes());
+        printf("LRU:%.4lf\n",1-((GetLackTimes()*1.0)/amount));
+
+        delete[] PVS;
+        delete[] replaceArray;
+        delete[] lackArray;
+    }
+    return 0;
+}
